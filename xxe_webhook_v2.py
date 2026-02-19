@@ -17,255 +17,165 @@ HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>XXE Webhook Monitor</title>
+    <title>Webhook Dashboard</title>
     <meta http-equiv="refresh" content="3">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
-            background: #f4f6f8;
-            color: #333;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            background: #f5f7fa;
+            color: #222;
         }
 
-        /* Header */
-        .header {
+        header {
             background: #ffffff;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 26px;
-        }
-
-        .subtitle {
-            color: #777;
-            font-size: 14px;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 20px;
+            font-weight: 600;
         }
 
         .container {
             max-width: 1100px;
             margin: 20px auto;
-            padding: 0 15px;
+            padding: 0 16px;
         }
 
-        /* Cards */
-        .card {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
             margin-bottom: 20px;
         }
 
-        .webhook-url {
-            text-align: center;
-            font-size: 16px;
-        }
-
-        .url-text {
-            font-family: monospace;
-            background: #f1f1f1;
-            padding: 8px 12px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-top: 10px;
-        }
-
-        /* Stats */
-        .stats {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .stat-box {
-            flex: 1;
-            min-width: 150px;
-            background: #fafafa;
-            padding: 15px;
+        .stat {
+            background: white;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
             border-radius: 6px;
-            border: 1px solid #ddd;
-            text-align: center;
+            min-width: 160px;
         }
 
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c7be5;
+        .stat strong {
+            display: block;
+            font-size: 20px;
+            margin-top: 4px;
         }
 
-        /* Buttons */
-        .clear-btn {
-            background: #e5533d;
+        .url-box {
+            background: #fff;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+
+        button {
+            background: #ef4444;
             color: white;
             border: none;
-            padding: 10px 18px;
+            padding: 8px 14px;
             border-radius: 4px;
             cursor: pointer;
             float: right;
         }
 
-        .clear-btn:hover {
-            background: #c73c2b;
+        button:hover {
+            background: #dc2626;
         }
 
-        /* Requests */
-        .request {
-            border-left: 4px solid #2c7be5;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border: 1px solid #e5e7eb;
         }
 
-        .request.xxe {
-            border-left-color: #e5533d;
-            background: #fff5f5;
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 14px;
         }
 
-        .timestamp {
-            color: #888;
-            font-size: 13px;
+        th {
+            background: #f9fafb;
+            font-weight: 600;
         }
 
         .method {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-right: 8px;
-            color: white;
-        }
-
-        .method.GET { background: #2c7be5; }
-        .method.POST { background: #28a745; }
-
-        .path {
             font-weight: bold;
         }
 
-        .label {
-            margin-top: 10px;
+        .xxe {
+            color: #dc2626;
             font-weight: bold;
-            font-size: 13px;
         }
 
-        .headers, .body {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            font-family: monospace;
-            font-size: 12px;
-            overflow-x: auto;
-        }
-
-        .alert {
-            background: #ffe5e5;
-            color: #a30000;
-            padding: 15px;
-            border-radius: 6px;
+        .empty {
             text-align: center;
-            font-weight: bold;
-            border: 1px solid #ffb3b3;
-        }
-
-        .no-requests {
-            text-align: center;
+            padding: 30px;
             color: #777;
-            padding: 40px;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="header">
-        <h1>XXE Webhook Monitor</h1>
-        <div class="subtitle">Real callbacks only — health checks filtered</div>
+<header>Webhook Dashboard</header>
+
+<div class="container">
+
+    <div class="url-box">
+        <strong>Webhook URL:</strong><br>
+        {{ webhook_url }}
     </div>
 
-    <div class="container">
+    <div class="stats">
+        <div class="stat">Total Requests<strong>{{ total_requests }}</strong></div>
+        <div class="stat">Potential XXE<strong>{{ xxe_count }}</strong></div>
+        <div class="stat">Last Request<strong>{{ last_request }}</strong></div>
+    </div>
 
-        <!-- Webhook URL -->
-        <div class="card webhook-url">
-            <div>Your Webhook URL</div>
-            <div class="url-text">{{ webhook_url }}</div>
-        </div>
+    <form action="/clear" method="POST">
+        <button type="submit">Clear Logs</button>
+    </form>
 
-        <!-- Stats -->
-        <div class="card">
-            <form action="/clear" method="POST">
-                <button type="submit" class="clear-btn">Clear All</button>
-            </form>
+    <h3>Recent Requests</h3>
 
-            <div class="stats">
-                <div class="stat-box">
-                    <div>Total Callbacks</div>
-                    <div class="stat-value">{{ total_requests }}</div>
-                </div>
-
-                <div class="stat-box">
-                    <div>Potential XXE</div>
-                    <div class="stat-value">{{ xxe_count }}</div>
-                </div>
-
-                <div class="stat-box">
-                    <div>Last Request</div>
-                    <div class="stat-value">{{ last_request }}</div>
-                </div>
-            </div>
-        </div>
-
-        {% if xxe_count > 0 %}
-        <div class="alert">
-            ⚠️ {{ xxe_count }} potential XXE callback(s) detected
-        </div>
-        {% endif %}
-
-        <h2>Recent Callbacks</h2>
-
+    {% if requests %}
+    <table>
+        <tr>
+            <th>Time</th>
+            <th>Method</th>
+            <th>Path</th>
+            <th>IP</th>
+            <th>Status</th>
+        </tr>
         {% for req in requests %}
-        <div class="card request {% if req.is_xxe %}xxe{% endif %}">
-            <div class="timestamp">{{ req.timestamp }}</div>
-
-            <div>
-                <span class="method {{ req.method }}">{{ req.method }}</span>
-                <span class="path">{{ req.path }}</span>
+        <tr>
+            <td>{{ req.timestamp }}</td>
+            <td class="method">{{ req.method }}</td>
+            <td>{{ req.path }}</td>
+            <td>{{ req.ip }}</td>
+            <td>
                 {% if req.is_xxe %}
-                    <strong style="color:#e5533d;">⚠ Possible XXE</strong>
+                    <span class="xxe">Possible XXE</span>
+                {% else %}
+                    Normal
                 {% endif %}
-            </div>
-
-            <div class="label">Source IP</div>
-            <div>{{ req.ip }}</div>
-
-            <div class="label">User-Agent</div>
-            <div>{{ req.user_agent }}</div>
-
-            {% if req.headers %}
-            <div class="label">Headers</div>
-            <div class="headers"><pre>{{ req.headers }}</pre></div>
-            {% endif %}
-
-            {% if req.body %}
-            <div class="label">Body</div>
-            <div class="body"><pre>{{ req.body }}</pre></div>
-            {% endif %}
-        </div>
+            </td>
+        </tr>
         {% endfor %}
+    </table>
+    {% else %}
+        <div class="empty">No requests received yet</div>
+    {% endif %}
 
-        {% if not requests %}
-        <div class="no-requests">
-            <h3>No callbacks yet</h3>
-            <p>Use your webhook URL in XXE payloads</p>
-            <code>{{ webhook_url }}/test</code>
-        </div>
-        {% endif %}
-
-    </div>
+</div>
 
 </body>
 </html>
