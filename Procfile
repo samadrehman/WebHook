@@ -1,1 +1,1 @@
-web: gunicorn xxe_webhook:app
+web: gunicorn xxe_webhook_v2:app
